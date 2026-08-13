@@ -1,9 +1,10 @@
 # lwconnect-mqtt
 
 `lwconnect-mqtt` signs in to Loudoun Water's LW Connect portal with Playwright,
-extracts configured water-usage values, and publishes them to MQTT. It also
-publishes retained MQTT Discovery messages so Home Assistant can create the
-sensors automatically.
+extracts configured water-usage values and the live tiered tariff, and publishes
+them to MQTT. It also publishes retained MQTT Discovery messages so Home
+Assistant can create usage, cost, rate, tier, and source-date sensors
+automatically.
 
 LW Connect does not expose a documented customer API. This project therefore
 automates the rendered portal and intentionally avoids its private Mendix
@@ -49,9 +50,10 @@ locally and adjust `config/readings.json` until the desired values appear in
   numeric value by default;
 - Home Assistant metadata such as unit, device class, and state class.
 
-The included rules are conservative starting heuristics because the
-authenticated account view is not publicly inspectable. They require the page to
-identify values as gallons instead of silently assuming a unit.
+The usage dashboard tariff is read on every poll. The current usage cost is
+calculated progressively across the displayed tiers. It represents the water
+consumption charge only; fixed fees, wastewater charges, taxes, and other bill
+items are not included.
 
 Test one complete scrape and publish:
 
@@ -88,10 +90,10 @@ ghcr.io/spi3/lwconnect-mqtt
 For example:
 
 ```sh
-docker pull ghcr.io/spi3/lwconnect-mqtt:0.1.0
+docker pull ghcr.io/spi3/lwconnect-mqtt:0.2.0
 ```
 
-Pushing a semantic version tag such as `v0.1.0` publishes the full version,
+Pushing a semantic version tag such as `v0.2.0` publishes the full version,
 major/minor, major, and appropriate `latest` image tags. The tag must match the
 version in `package.json`; the release workflow runs all checks before
 publishing and attaches provenance and an SBOM.
@@ -100,17 +102,18 @@ publishing and attaches provenance and an SBOM.
 
 Defaults can be changed in `.env`.
 
-| Topic                                                 | Payload                                                                                | Retained |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------- | -------- |
-| `home/water/lwconnect/state`                          | `{"observedAt":"...","sourceUpdatedOn":"2026-08-11","metrics":{"current_usage":1234}}` | yes      |
-| `home/water/lwconnect/availability`                   | `online` or `offline`                                                                  | yes      |
-| `homeassistant/sensor/lwconnect-mqtt/<metric>/config` | Home Assistant MQTT Discovery config                                                   | yes      |
+| Topic                                                 | Payload                                                                                                    | Retained |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------- |
+| `home/water/lwconnect/state`                          | JSON containing observation dates, usage metrics, current usage cost, current tier, rate, and tariff tiers | yes      |
+| `home/water/lwconnect/availability`                   | `online` or `offline`                                                                                      | yes      |
+| `homeassistant/sensor/lwconnect-mqtt/<metric>/config` | Home Assistant MQTT Discovery config                                                                       | yes      |
 
 State and discovery messages use QoS 1. The MQTT connection also has a retained
 `offline` last will, and an orderly continuous-service shutdown publishes
 `offline` explicitly. A successful one-shot publish remains available. The water
-sensor exposes `source_updated_on` and `observed_at` attributes, and MQTT
-Discovery creates a separate diagnostic date sensor for the source update.
+sensor exposes `source_updated_on` and `observed_at` attributes. MQTT Discovery
+also creates sensors for current water usage cost in USD, marginal water rate in
+USD per gallon, tariff tier, and the source update date.
 
 ## Troubleshooting
 

@@ -110,6 +110,74 @@ export class MqttPublisher {
       }),
       true,
     );
+
+    const costSensors: readonly {
+      id: string;
+      name: string;
+      valueTemplate: string;
+      unit?: string;
+      deviceClass?: string;
+      stateClass?: "measurement" | "total";
+      icon: string;
+    }[] = [
+      {
+        id: "current_water_cost",
+        name: "Current Water Usage Cost",
+        valueTemplate: "{{ value_json.usageCost.amount }}",
+        unit: "USD",
+        deviceClass: "monetary",
+        stateClass: "total",
+        icon: "mdi:cash",
+      },
+      {
+        id: "current_water_rate",
+        name: "Current Water Rate",
+        valueTemplate: "{{ value_json.usageCost.currentPricePerGallon }}",
+        unit: "USD/gal",
+        stateClass: "measurement",
+        icon: "mdi:cash-multiple",
+      },
+      {
+        id: "current_water_tier",
+        name: "Current Water Tier",
+        valueTemplate: "{{ value_json.usageCost.currentTier }}",
+        icon: "mdi:chart-waterfall",
+      },
+    ];
+
+    for (const sensor of costSensors) {
+      await this.publish(
+        `${this.config.discoveryPrefix}/sensor/${this.config.clientId}/${sensor.id}/config`,
+        JSON.stringify({
+          name: sensor.name,
+          unique_id: `${this.config.clientId}_${sensor.id}`,
+          object_id: `${this.config.clientId}_${sensor.id}`,
+          state_topic: this.stateTopic,
+          value_template: sensor.valueTemplate,
+          availability_topic: this.availabilityTopic,
+          payload_available: "online",
+          payload_not_available: "offline",
+          ...(sensor.unit === undefined
+            ? {}
+            : { unit_of_measurement: sensor.unit }),
+          ...(sensor.deviceClass === undefined
+            ? {}
+            : { device_class: sensor.deviceClass }),
+          ...(sensor.stateClass === undefined
+            ? {}
+            : { state_class: sensor.stateClass }),
+          icon: sensor.icon,
+          device: {
+            identifiers: [this.config.clientId],
+          },
+          origin: {
+            name: "lwconnect-mqtt",
+            sw_version: appVersion,
+          },
+        }),
+        true,
+      );
+    }
   }
 
   public async publishReading(reading: UsageReading): Promise<void> {

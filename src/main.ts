@@ -30,6 +30,7 @@ const main = async (): Promise<void> => {
       sourceUpdatedOn: result.sourceUpdatedOn,
       extractedMetrics: result.metrics,
       missingRuleIds: result.missingRuleIds,
+      usageCost: result.usageCost,
     });
     return;
   }
@@ -56,6 +57,7 @@ const main = async (): Promise<void> => {
       observedAt: reading.observedAt,
       sourceUpdatedOn: reading.sourceUpdatedOn,
       metrics: reading.metrics,
+      usageCost: reading.usageCost,
     });
   };
 

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { chromium, type Browser, type Page } from "playwright";
 
 import { extractFromText } from "./extract.js";
+import { extractUsageCost } from "./tariff.js";
 import type { CalibrationResult, PortalConfig, UsageReading } from "./types.js";
 
 const usernameSelector = 'input[placeholder="User ID or Email Address"]';
@@ -44,6 +45,7 @@ export class PortalClient {
     return this.withUsagePage(async (page) => {
       const extracted = await this.extract(page);
       const sourceUpdatedOn = await this.extractSourceUpdatedOn(page);
+      const usageCost = await this.extractUsageCost(page);
       if (Object.keys(extracted.metrics).length === 0) {
         if (this.config.saveDiagnostics) {
           await this.saveArtifacts(page);
@@ -57,6 +59,7 @@ export class PortalClient {
         observedAt: new Date().toISOString(),
         sourceUpdatedOn,
         metrics: extracted.metrics,
+        usageCost,
       };
     });
   }
@@ -65,10 +68,12 @@ export class PortalClient {
     return this.withUsagePage(async (page) => {
       const extracted = await this.extract(page);
       const sourceUpdatedOn = await this.extractSourceUpdatedOn(page);
+      const usageCost = await this.extractUsageCost(page);
       await this.saveArtifacts(page);
       return {
         artifactDir: this.config.artifactDir,
         sourceUpdatedOn,
+        usageCost,
         ...extracted,
       };
     });
@@ -138,13 +143,31 @@ export class PortalClient {
       return;
     }
 
-    for (const label of this.config.rules.usageNavigationLabels) {
+    for (const [
+      index,
+      label,
+    ] of this.config.rules.usageNavigationLabels.entries()) {
       const exactLabel = new RegExp(`^\\s*${escapeRegExp(label)}\\s*$`, "i");
       const navigation = page
         .locator("button:visible, a:visible")
         .filter({ hasText: exactLabel })
         .first();
-      if ((await navigation.count()) > 0) {
+      if (index === 0) {
+        const preferredNavigationAppeared = await navigation
+          .waitFor({
+            state: "visible",
+            timeout: Math.min(this.config.timeoutMs, 5_000),
+          })
+          .then(() => true)
+          .catch(() => false);
+        if (!preferredNavigationAppeared) {
+          continue;
+        }
+      } else if ((await navigation.count()) === 0) {
+        continue;
+      }
+
+      if (await navigation.isVisible()) {
         await navigation.click();
         await page.waitForTimeout(1_000);
         return;
@@ -177,6 +200,25 @@ export class PortalClient {
 
   private async extractSourceUpdatedOn(page: Page): Promise<string> {
     return extractSourceUpdatedOn(await page.locator("body").innerText());
+  }
+
+  private async extractUsageCost(page: Page) {
+    const dashboard = page
+      .locator('[role="dialog"]:visible')
+      .filter({ hasText: /Tier\s+1\s*-\s*\$/i })
+      .first();
+    await dashboard.waitFor({ state: "visible" });
+    const currentUsageText =
+      (await dashboard.locator(".gauge #Value").textContent()) ?? "";
+    const currentUsage = Number(currentUsageText.replaceAll(",", "").trim());
+    const thresholdLabels = await dashboard
+      .locator(".gauge .label text")
+      .allTextContents();
+    return extractUsageCost(
+      await dashboard.innerText(),
+      thresholdLabels,
+      currentUsage,
+    );
   }
 
   private async saveArtifacts(page: Page): Promise<void> {

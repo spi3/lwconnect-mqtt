@@ -25,7 +25,7 @@ beforeAll(async () => {
               setTimeout(() => {
                 document.querySelector('#app').innerHTML = '<h1>Dashboard</h1><button id="usage">Water Usage</button>';
                 document.querySelector('#usage').addEventListener('click', () => {
-                  document.querySelector('#app').innerHTML = '<h1>Water Usage</h1><p>Current Billing Cycle Usage</p><strong>1,234 gallons</strong><p>Average Daily Usage</p><strong>42.5 gal</strong><p>Last Update: 08/11/2026</p>';
+                  document.querySelector('#app').innerHTML = '<h1>Water Usage</h1><p>Current Billing Cycle Usage</p><strong>1,234 gallons</strong><p>Average Daily Usage</p><strong>42.5 gal</strong><p>Last Update: 08/11/2026</p><div role="dialog" aria-label="Usage Dashboard"><p>Tier 1 - $3.37 per 1,000 gallons</p><p>Tier 2 - $9.34 per 1,000 gallons</p><p>Tier 3 - $12.52 per 1,000 gallons</p><svg class="gauge"><g class="label"><text>0</text><text>25,000</text><text>50,000</text><text>75,000</text></g><text id="Value">1,234</text></svg></div>';
                 });
               }, 50);
             });
@@ -95,6 +95,11 @@ describe("PortalClient", () => {
       average_daily_usage: 42.5,
     });
     expect(reading.sourceUpdatedOn).toBe("2026-08-11");
+    expect(reading.usageCost).toMatchObject({
+      amount: 4.16,
+      currentTier: 1,
+      currentPricePerGallon: 0.00337,
+    });
     expect(Date.parse(reading.observedAt)).not.toBeNaN();
   });
 });

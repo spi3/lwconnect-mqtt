@@ -1,5 +1,6 @@
 .env
 .playwright/
+.playwright-cli/
 artifacts/
 dist/
 node_modules/

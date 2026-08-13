@@ -45,12 +45,30 @@ describe("MqttPublisher", () => {
       observedAt: "2026-08-13T00:00:00.000Z",
       sourceUpdatedOn: "2026-08-11",
       metrics: { current_billing_cycle: 123 },
+      usageCost: {
+        amount: 0.41,
+        currency: "USD",
+        currentTier: 1,
+        currentPricePerGallon: 0.00337,
+        tiers: [
+          {
+            tier: 1,
+            startsAtGallons: 0,
+            endsAtGallons: 25_000,
+            pricePerThousandGallons: 3.37,
+            pricePerGallon: 0.00337,
+          },
+        ],
+      },
     });
     await publisher.close();
 
     expect(publications.map(({ topic }) => topic)).toEqual([
       "homeassistant/sensor/lwconnect-mqtt/current_billing_cycle/config",
       "homeassistant/sensor/lwconnect-mqtt/source_updated_on/config",
+      "homeassistant/sensor/lwconnect-mqtt/current_water_cost/config",
+      "homeassistant/sensor/lwconnect-mqtt/current_water_rate/config",
+      "homeassistant/sensor/lwconnect-mqtt/current_water_tier/config",
       "home/water/lwconnect/state",
       "home/water/lwconnect/availability",
     ]);
@@ -69,10 +87,42 @@ describe("MqttPublisher", () => {
       device_class: "date",
       entity_category: "diagnostic",
     });
-    expect(JSON.parse(publications[2]?.message ?? "{}")).toEqual({
+    expect(JSON.parse(publications[2]?.message ?? "{}")).toMatchObject({
+      unique_id: "lwconnect-mqtt_current_water_cost",
+      value_template: "{{ value_json.usageCost.amount }}",
+      device_class: "monetary",
+      state_class: "total",
+      unit_of_measurement: "USD",
+    });
+    expect(JSON.parse(publications[3]?.message ?? "{}")).toMatchObject({
+      unique_id: "lwconnect-mqtt_current_water_rate",
+      value_template: "{{ value_json.usageCost.currentPricePerGallon }}",
+      state_class: "measurement",
+      unit_of_measurement: "USD/gal",
+    });
+    expect(JSON.parse(publications[4]?.message ?? "{}")).toMatchObject({
+      unique_id: "lwconnect-mqtt_current_water_tier",
+      value_template: "{{ value_json.usageCost.currentTier }}",
+    });
+    expect(JSON.parse(publications[5]?.message ?? "{}")).toEqual({
       observedAt: "2026-08-13T00:00:00.000Z",
       sourceUpdatedOn: "2026-08-11",
       metrics: { current_billing_cycle: 123 },
+      usageCost: {
+        amount: 0.41,
+        currency: "USD",
+        currentTier: 1,
+        currentPricePerGallon: 0.00337,
+        tiers: [
+          {
+            tier: 1,
+            startsAtGallons: 0,
+            endsAtGallons: 25_000,
+            pricePerThousandGallons: 3.37,
+            pricePerGallon: 0.00337,
+          },
+        ],
+      },
     });
   });
 });

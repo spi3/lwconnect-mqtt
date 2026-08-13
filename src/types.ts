@@ -47,6 +47,23 @@ export type UsageReading = {
   observedAt: string;
   sourceUpdatedOn: string;
   metrics: Readonly<Record<string, number>>;
+  usageCost: UsageCost;
+};
+
+export type TariffTier = {
+  tier: number;
+  startsAtGallons: number;
+  endsAtGallons?: number;
+  pricePerThousandGallons: number;
+  pricePerGallon: number;
+};
+
+export type UsageCost = {
+  amount: number;
+  currency: "USD";
+  currentTier: number;
+  currentPricePerGallon: number;
+  tiers: readonly TariffTier[];
 };
 
 export type CalibrationResult = {
@@ -54,4 +71,5 @@ export type CalibrationResult = {
   sourceUpdatedOn: string;
   metrics: Readonly<Record<string, number>>;
   missingRuleIds: string[];
+  usageCost: UsageCost;
 };
