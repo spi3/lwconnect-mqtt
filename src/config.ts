@@ -12,6 +12,16 @@ const booleanValue = z
   .enum(["true", "false"])
   .transform((value) => value === "true");
 
+const optionalString = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().min(1).optional(),
+);
+
+const optionalUrl = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.url().optional(),
+);
+
 const environmentSchema = z.object({
   LWCONNECT_USERNAME: z.string().min(1),
   LWCONNECT_PASSWORD: z.string().min(1),
@@ -29,6 +39,14 @@ const environmentSchema = z.object({
   MQTT_TOPIC_PREFIX: z.string().min(1).default("home/water/lwconnect"),
   MQTT_DISCOVERY_PREFIX: z.string().min(1).default("homeassistant"),
   MQTT_REJECT_UNAUTHORIZED: booleanValue.default(true),
+  HOME_ASSISTANT_URL: optionalUrl,
+  HOME_ASSISTANT_TOKEN: optionalString,
+  HOME_ASSISTANT_IMPORT_STATISTICS: booleanValue.default(false),
+  HOME_ASSISTANT_STATISTIC_ID: z
+    .string()
+    .regex(/^[a-z0-9_]+:[a-z0-9_]+$/)
+    .default("lwconnect:daily_water_usage"),
+  HOME_ASSISTANT_TIME_ZONE: z.string().min(1).default("America/New_York"),
 });
 
 const readingRuleSchema = z.object({
@@ -82,6 +100,17 @@ export const loadConfig = async (): Promise<AppConfig> => {
       topicPrefix: trimTrailingSlashes(environment.MQTT_TOPIC_PREFIX),
       discoveryPrefix: trimTrailingSlashes(environment.MQTT_DISCOVERY_PREFIX),
       rejectUnauthorized: environment.MQTT_REJECT_UNAUTHORIZED,
+    },
+    homeAssistant: {
+      ...(environment.HOME_ASSISTANT_URL === undefined
+        ? {}
+        : { url: trimTrailingSlashes(environment.HOME_ASSISTANT_URL) }),
+      ...(environment.HOME_ASSISTANT_TOKEN === undefined
+        ? {}
+        : { token: environment.HOME_ASSISTANT_TOKEN }),
+      importStatistics: environment.HOME_ASSISTANT_IMPORT_STATISTICS,
+      statisticId: environment.HOME_ASSISTANT_STATISTIC_ID,
+      timeZone: environment.HOME_ASSISTANT_TIME_ZONE,
     },
     pollIntervalMs: environment.LWCONNECT_POLL_INTERVAL_MINUTES * 60_000,
   };

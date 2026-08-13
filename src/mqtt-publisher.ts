@@ -111,6 +111,34 @@ export class MqttPublisher {
       true,
     );
 
+    await this.publish(
+      `${this.config.discoveryPrefix}/sensor/${this.config.clientId}/latest_daily_usage/config`,
+      JSON.stringify({
+        name: "Latest Daily Water Usage",
+        unique_id: `${this.config.clientId}_latest_daily_usage`,
+        object_id: `${this.config.clientId}_latest_daily_usage`,
+        state_topic: this.dailyTopic,
+        value_template: "{{ value_json.days[-1].gallons }}",
+        json_attributes_topic: this.dailyTopic,
+        json_attributes_template:
+          "{{ {'usage_date': value_json.days[-1].date, 'observed_at': value_json.observedAt} | to_json }}",
+        availability_topic: this.availabilityTopic,
+        payload_available: "online",
+        payload_not_available: "offline",
+        unit_of_measurement: "gal",
+        device_class: "water",
+        icon: "mdi:water-outline",
+        device: {
+          identifiers: [this.config.clientId],
+        },
+        origin: {
+          name: "lwconnect-mqtt",
+          sw_version: appVersion,
+        },
+      }),
+      true,
+    );
+
     const costSensors: readonly {
       id: string;
       name: string;
@@ -182,6 +210,14 @@ export class MqttPublisher {
 
   public async publishReading(reading: UsageReading): Promise<void> {
     await this.publish(this.stateTopic, JSON.stringify(reading), true);
+    await this.publish(
+      this.dailyTopic,
+      JSON.stringify({
+        observedAt: reading.observedAt,
+        days: reading.dailyUsage,
+      }),
+      true,
+    );
     await this.publishAvailability("online");
   }
 
@@ -204,6 +240,10 @@ export class MqttPublisher {
 
   private get availabilityTopic(): string {
     return `${this.config.topicPrefix}/availability`;
+  }
+
+  private get dailyTopic(): string {
+    return `${this.config.topicPrefix}/daily`;
   }
 
   private async publish(

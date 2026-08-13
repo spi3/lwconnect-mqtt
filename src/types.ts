@@ -37,9 +37,18 @@ export type MqttConfig = {
   rejectUnauthorized: boolean;
 };
 
+export type HomeAssistantConfig = {
+  url?: string;
+  token?: string;
+  importStatistics: boolean;
+  statisticId: string;
+  timeZone: string;
+};
+
 export type AppConfig = {
   portal: PortalConfig;
   mqtt: MqttConfig;
+  homeAssistant: HomeAssistantConfig;
   pollIntervalMs: number;
 };
 
@@ -47,7 +56,13 @@ export type UsageReading = {
   observedAt: string;
   sourceUpdatedOn: string;
   metrics: Readonly<Record<string, number>>;
+  dailyUsage: readonly DailyUsage[];
   usageCost: UsageCost;
+};
+
+export type DailyUsage = {
+  date: string;
+  gallons: number;
 };
 
 export type TariffTier = {
@@ -71,5 +86,6 @@ export type CalibrationResult = {
   sourceUpdatedOn: string;
   metrics: Readonly<Record<string, number>>;
   missingRuleIds: string[];
+  dailyUsage: readonly DailyUsage[];
   usageCost: UsageCost;
 };

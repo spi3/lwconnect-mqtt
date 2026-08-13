@@ -1,15 +1,29 @@
 import { setTimeout as delay } from "node:timers/promises";
 
 import { loadConfig } from "./config.js";
+import { HomeAssistantStatistics } from "./home-assistant.js";
 import { log } from "./logger.js";
 import { MqttPublisher } from "./mqtt-publisher.js";
 import { PortalClient } from "./portal.js";
 
-type Command = "run" | "once" | "calibrate";
+type Command =
+  | "run"
+  | "once"
+  | "calibrate"
+  | "statistics:dry-run"
+  | "statistics:apply"
+  | "statistics:rollback";
 
 const parseCommand = (): Command => {
   const command = process.argv[2] ?? "run";
-  if (command === "run" || command === "once" || command === "calibrate") {
+  if (
+    command === "run" ||
+    command === "once" ||
+    command === "calibrate" ||
+    command === "statistics:dry-run" ||
+    command === "statistics:apply" ||
+    command === "statistics:rollback"
+  ) {
     return command;
   }
   throw new Error(`Unknown command: ${command}`);
@@ -30,8 +44,28 @@ const main = async (): Promise<void> => {
       sourceUpdatedOn: result.sourceUpdatedOn,
       extractedMetrics: result.metrics,
       missingRuleIds: result.missingRuleIds,
+      dailyUsage: result.dailyUsage,
       usageCost: result.usageCost,
     });
+    return;
+  }
+
+  if (command === "statistics:rollback") {
+    const result = await new HomeAssistantStatistics(
+      config.homeAssistant,
+    ).rollback();
+    log("info", "Home Assistant daily usage statistic removed", result);
+    return;
+  }
+
+  if (command === "statistics:dry-run" || command === "statistics:apply") {
+    const reading = await portal.scrapeUsage();
+    const mode = command === "statistics:apply" ? "apply" : "dry-run";
+    const result = await new HomeAssistantStatistics(config.homeAssistant).sync(
+      reading.dailyUsage,
+      mode,
+    );
+    log("info", "Home Assistant daily usage statistics inspected", result);
     return;
   }
 
@@ -53,10 +87,20 @@ const main = async (): Promise<void> => {
   const poll = async (): Promise<void> => {
     const reading = await portal.scrapeUsage();
     await publisher.publishReading(reading);
+    if (config.homeAssistant.importStatistics) {
+      const statistics = await new HomeAssistantStatistics(
+        config.homeAssistant,
+      ).sync(reading.dailyUsage, "apply");
+      log("info", "Home Assistant daily usage statistics synchronized", {
+        ...statistics,
+        auditPath: statistics.auditPath,
+      });
+    }
     log("info", "Water usage published", {
       observedAt: reading.observedAt,
       sourceUpdatedOn: reading.sourceUpdatedOn,
       metrics: reading.metrics,
+      dailyUsage: reading.dailyUsage,
       usageCost: reading.usageCost,
     });
   };

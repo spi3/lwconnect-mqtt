@@ -45,6 +45,10 @@ describe("MqttPublisher", () => {
       observedAt: "2026-08-13T00:00:00.000Z",
       sourceUpdatedOn: "2026-08-11",
       metrics: { current_billing_cycle: 123 },
+      dailyUsage: [
+        { date: "2026-08-10", gallons: 100 },
+        { date: "2026-08-11", gallons: 123 },
+      ],
       usageCost: {
         amount: 0.41,
         currency: "USD",
@@ -66,10 +70,12 @@ describe("MqttPublisher", () => {
     expect(publications.map(({ topic }) => topic)).toEqual([
       "homeassistant/sensor/lwconnect-mqtt/current_billing_cycle/config",
       "homeassistant/sensor/lwconnect-mqtt/source_updated_on/config",
+      "homeassistant/sensor/lwconnect-mqtt/latest_daily_usage/config",
       "homeassistant/sensor/lwconnect-mqtt/current_water_cost/config",
       "homeassistant/sensor/lwconnect-mqtt/current_water_rate/config",
       "homeassistant/sensor/lwconnect-mqtt/current_water_tier/config",
       "home/water/lwconnect/state",
+      "home/water/lwconnect/daily",
       "home/water/lwconnect/availability",
     ]);
     expect(JSON.parse(publications[0]?.message ?? "{}")).toMatchObject({
@@ -88,26 +94,36 @@ describe("MqttPublisher", () => {
       entity_category: "diagnostic",
     });
     expect(JSON.parse(publications[2]?.message ?? "{}")).toMatchObject({
+      unique_id: "lwconnect-mqtt_latest_daily_usage",
+      state_topic: "home/water/lwconnect/daily",
+      value_template: "{{ value_json.days[-1].gallons }}",
+      device_class: "water",
+    });
+    expect(JSON.parse(publications[3]?.message ?? "{}")).toMatchObject({
       unique_id: "lwconnect-mqtt_current_water_cost",
       value_template: "{{ value_json.usageCost.amount }}",
       device_class: "monetary",
       state_class: "total_increasing",
       unit_of_measurement: "USD",
     });
-    expect(JSON.parse(publications[3]?.message ?? "{}")).toMatchObject({
+    expect(JSON.parse(publications[4]?.message ?? "{}")).toMatchObject({
       unique_id: "lwconnect-mqtt_current_water_rate",
       value_template: "{{ value_json.usageCost.currentPricePerGallon }}",
       state_class: "measurement",
       unit_of_measurement: "USD/gal",
     });
-    expect(JSON.parse(publications[4]?.message ?? "{}")).toMatchObject({
+    expect(JSON.parse(publications[5]?.message ?? "{}")).toMatchObject({
       unique_id: "lwconnect-mqtt_current_water_tier",
       value_template: "{{ value_json.usageCost.currentTier }}",
     });
-    expect(JSON.parse(publications[5]?.message ?? "{}")).toEqual({
+    expect(JSON.parse(publications[6]?.message ?? "{}")).toEqual({
       observedAt: "2026-08-13T00:00:00.000Z",
       sourceUpdatedOn: "2026-08-11",
       metrics: { current_billing_cycle: 123 },
+      dailyUsage: [
+        { date: "2026-08-10", gallons: 100 },
+        { date: "2026-08-11", gallons: 123 },
+      ],
       usageCost: {
         amount: 0.41,
         currency: "USD",
@@ -123,6 +139,13 @@ describe("MqttPublisher", () => {
           },
         ],
       },
+    });
+    expect(JSON.parse(publications[7]?.message ?? "{}")).toEqual({
+      observedAt: "2026-08-13T00:00:00.000Z",
+      days: [
+        { date: "2026-08-10", gallons: 100 },
+        { date: "2026-08-11", gallons: 123 },
+      ],
     });
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "lwconnect-mqtt",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "description": "Publish Loudoun Water LW Connect usage to MQTT with Playwright",
   "type": "module",
@@ -15,6 +15,9 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
     "once": "tsx src/main.ts once",
+    "statistics:apply": "tsx src/main.ts statistics:apply",
+    "statistics:dry-run": "tsx src/main.ts statistics:dry-run",
+    "statistics:rollback": "tsx src/main.ts statistics:rollback",
     "start": "node dist/main.js run",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

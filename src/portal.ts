@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { chromium, type Browser, type Page } from "playwright";
 
+import { buildDailyUsage } from "./daily-usage.js";
 import { extractFromText } from "./extract.js";
 import { extractUsageCost } from "./tariff.js";
 import type { CalibrationResult, PortalConfig, UsageReading } from "./types.js";
@@ -46,6 +47,7 @@ export class PortalClient {
       const extracted = await this.extract(page);
       const sourceUpdatedOn = await this.extractSourceUpdatedOn(page);
       const usageCost = await this.extractUsageCost(page);
+      const dailyUsage = await this.extractDailyUsage(page);
       if (Object.keys(extracted.metrics).length === 0) {
         if (this.config.saveDiagnostics) {
           await this.saveArtifacts(page);
@@ -59,6 +61,7 @@ export class PortalClient {
         observedAt: new Date().toISOString(),
         sourceUpdatedOn,
         metrics: extracted.metrics,
+        dailyUsage,
         usageCost,
       };
     });
@@ -69,10 +72,12 @@ export class PortalClient {
       const extracted = await this.extract(page);
       const sourceUpdatedOn = await this.extractSourceUpdatedOn(page);
       const usageCost = await this.extractUsageCost(page);
+      const dailyUsage = await this.extractDailyUsage(page);
       await this.saveArtifacts(page);
       return {
         artifactDir: this.config.artifactDir,
         sourceUpdatedOn,
+        dailyUsage,
         usageCost,
         ...extracted,
       };
@@ -219,6 +224,69 @@ export class PortalClient {
       thresholdLabels,
       currentUsage,
     );
+  }
+
+  private async extractDailyUsage(page: Page) {
+    const dashboard = page
+      .locator('[role="dialog"]:visible')
+      .filter({ hasText: /Tier\s+1\s*-\s*\$/i })
+      .first();
+    await dashboard
+      .locator("button:visible")
+      .filter({ hasText: /^\s*Close\s*$/i })
+      .click();
+
+    const historyTab = page
+      .locator('a[role="tab"]:visible')
+      .filter({ hasText: /^\s*Consumption History\s*$/i })
+      .first();
+    await historyTab.waitFor({ state: "visible" });
+    await historyTab.click();
+
+    const viewSelect = page.locator("select:visible").filter({
+      has: page.locator('option[value="Daily"]'),
+    });
+    await viewSelect.waitFor({ state: "visible" });
+    await viewSelect.selectOption("Daily");
+    await page.waitForFunction(() =>
+      /Showing\s+Daily\s+breakdown/i.test(document.body.innerText),
+    );
+    await page.waitForTimeout(3_000);
+
+    const chart = await page.evaluate(() => {
+      type ChartDataset = { data?: unknown[] };
+      type ChartInstance = {
+        canvas?: HTMLCanvasElement;
+        data?: { labels?: unknown[]; datasets?: ChartDataset[] };
+      };
+      const chartGlobal = (
+        globalThis as typeof globalThis & {
+          Chart?: { instances?: Record<string, ChartInstance> };
+        }
+      ).Chart;
+      const instances = Object.values(chartGlobal?.instances ?? {});
+      const instance = instances
+        .filter(
+          ({ canvas, data }) =>
+            canvas instanceof HTMLCanvasElement &&
+            canvas.getClientRects().length > 0 &&
+            (data?.labels?.length ?? 0) > 0 &&
+            (data?.datasets?.[0]?.data?.length ?? 0) > 0,
+        )
+        .sort(
+          (left, right) =>
+            (right.data?.labels?.length ?? 0) -
+            (left.data?.labels?.length ?? 0),
+        )[0];
+      return {
+        labels: (instance?.data?.labels ?? []).map(String),
+        values: (instance?.data?.datasets?.[0]?.data ?? []).map((value) =>
+          typeof value === "number" ? value : Number(value),
+        ),
+      };
+    });
+
+    return buildDailyUsage(chart.labels, chart.values, new Date());
   }
 
   private async saveArtifacts(page: Page): Promise<void> {
