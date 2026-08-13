@@ -117,7 +117,7 @@ export class MqttPublisher {
       valueTemplate: string;
       unit?: string;
       deviceClass?: string;
-      stateClass?: "measurement" | "total";
+      stateClass?: "measurement" | "total_increasing";
       icon: string;
     }[] = [
       {
@@ -126,7 +126,7 @@ export class MqttPublisher {
         valueTemplate: "{{ value_json.usageCost.amount }}",
         unit: "USD",
         deviceClass: "monetary",
-        stateClass: "total",
+        stateClass: "total_increasing",
         icon: "mdi:cash",
       },
       {

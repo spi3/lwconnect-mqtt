@@ -91,7 +91,7 @@ describe("MqttPublisher", () => {
       unique_id: "lwconnect-mqtt_current_water_cost",
       value_template: "{{ value_json.usageCost.amount }}",
       device_class: "monetary",
-      state_class: "total",
+      state_class: "total_increasing",
       unit_of_measurement: "USD",
     });
     expect(JSON.parse(publications[3]?.message ?? "{}")).toMatchObject({

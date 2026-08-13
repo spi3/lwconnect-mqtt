@@ -53,7 +53,10 @@ locally and adjust `config/readings.json` until the desired values appear in
 The usage dashboard tariff is read on every poll. The current usage cost is
 calculated progressively across the displayed tiers. It represents the water
 consumption charge only; fixed fees, wastewater charges, taxes, and other bill
-items are not included.
+items are not included. LW Connect reports both current usage and this derived
+cost for the current quarterly billing cycle, so their displayed states reset at
+the next cycle. Home Assistant classifies them as increasing totals and treats a
+decrease as the start of a new meter cycle when compiling long-term statistics.
 
 Test one complete scrape and publish:
 
@@ -90,10 +93,10 @@ ghcr.io/spi3/lwconnect-mqtt
 For example:
 
 ```sh
-docker pull ghcr.io/spi3/lwconnect-mqtt:0.2.0
+docker pull ghcr.io/spi3/lwconnect-mqtt:0.2.1
 ```
 
-Pushing a semantic version tag such as `v0.2.0` publishes the full version,
+Pushing a semantic version tag such as `v0.2.1` publishes the full version,
 major/minor, major, and appropriate `latest` image tags. The tag must match the
 version in `package.json`; the release workflow runs all checks before
 publishing and attaches provenance and an SBOM.
