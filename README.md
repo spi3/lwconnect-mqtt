@@ -83,11 +83,11 @@ unprivileged `pwuser` supplied by the official Playwright image.
 
 Defaults can be changed in `.env`.
 
-| Topic                                                 | Payload                                                         | Retained |
-| ----------------------------------------------------- | --------------------------------------------------------------- | -------- |
-| `home/water/lwconnect/state`                          | `{"observedAt":"...","metrics":{"current_billing_cycle":1234}}` | yes      |
-| `home/water/lwconnect/availability`                   | `online` or `offline`                                           | yes      |
-| `homeassistant/sensor/lwconnect-mqtt/<metric>/config` | Home Assistant MQTT Discovery config                            | yes      |
+| Topic                                                 | Payload                                                 | Retained |
+| ----------------------------------------------------- | ------------------------------------------------------- | -------- |
+| `home/water/lwconnect/state`                          | `{"observedAt":"...","metrics":{"current_usage":1234}}` | yes      |
+| `home/water/lwconnect/availability`                   | `online` or `offline`                                   | yes      |
+| `homeassistant/sensor/lwconnect-mqtt/<metric>/config` | Home Assistant MQTT Discovery config                    | yes      |
 
 State and discovery messages use QoS 1. The MQTT connection also has a retained
 `offline` last will, and an orderly shutdown publishes `offline` explicitly.

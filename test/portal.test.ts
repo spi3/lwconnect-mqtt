@@ -21,10 +21,13 @@ beforeAll(async () => {
           </main>
           <script>
             document.querySelector('#login').addEventListener('click', () => {
-              document.querySelector('#app').innerHTML = '<h1>Dashboard</h1><button id="usage">Water Usage</button>';
-              document.querySelector('#usage').addEventListener('click', () => {
-                document.querySelector('#app').innerHTML = '<h1>Water Usage</h1><p>Current Billing Cycle Usage</p><strong>1,234 gallons</strong><p>Average Daily Usage</p><strong>42.5 gal</strong>';
-              });
+              document.querySelector('#app').innerHTML = '';
+              setTimeout(() => {
+                document.querySelector('#app').innerHTML = '<h1>Dashboard</h1><button id="usage">Water Usage</button>';
+                document.querySelector('#usage').addEventListener('click', () => {
+                  document.querySelector('#app').innerHTML = '<h1>Water Usage</h1><p>Current Billing Cycle Usage</p><strong>1,234 gallons</strong><p>Average Daily Usage</p><strong>42.5 gal</strong>';
+                });
+              }, 50);
             });
           </script>
         </body>

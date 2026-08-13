@@ -6,8 +6,8 @@ import { chromium, type Browser, type Page } from "playwright";
 import { extractFromText } from "./extract.js";
 import type { CalibrationResult, PortalConfig, UsageReading } from "./types.js";
 
-const visibleUsernameSelector =
-  'input[placeholder="User ID or Email Address"]:visible';
+const usernameSelector = 'input[placeholder="User ID or Email Address"]';
+const visibleUsernameSelector = `${usernameSelector}:visible`;
 const visiblePasswordSelector = 'input[placeholder="Password"]:visible';
 
 const escapeRegExp = (value: string): string =>
@@ -91,6 +91,13 @@ export class PortalClient {
     await loginButton.click();
 
     await username.waitFor({ state: "hidden", timeout: this.config.timeoutMs });
+    await page.waitForFunction((selector) => {
+      const loginIsVisible = [...document.querySelectorAll(selector)].some(
+        (element) =>
+          element instanceof HTMLElement && element.getClientRects().length > 0,
+      );
+      return !loginIsVisible && document.body.innerText.trim().length > 0;
+    }, usernameSelector);
   }
 
   private async openUsagePage(page: Page): Promise<void> {

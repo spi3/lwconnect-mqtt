@@ -1,41 +1,20 @@
 {
-  "usageNavigationLabels": ["Water Usage", "Usage"],
+  "usageNavigationLabels": [
+    "VIEW USAGE",
+    "Consumption History",
+    "Water Usage",
+    "Usage"
+  ],
   "readings": [
     {
-      "id": "current_billing_cycle",
-      "name": "Current Billing Cycle Water Usage",
+      "id": "current_usage",
+      "name": "Current Water Usage",
       "selector": "body",
-      "patterns": [
-        "Current Billing Cycle(?: Water)? Usage\\s*[:\\n]?\\s*([\\d,.]+)\\s*(?:gal|gallons)",
-        "Usage This Billing Cycle\\s*[:\\n]?\\s*([\\d,.]+)\\s*(?:gal|gallons)"
-      ],
+      "patterns": ["CURRENT USAGE\\s*[:\\n]?\\s*([\\d,.]+)\\s*(?:gal|gallons)"],
       "unit": "gal",
       "deviceClass": "water",
       "stateClass": "total_increasing",
       "icon": "mdi:water"
-    },
-    {
-      "id": "average_daily_usage",
-      "name": "Average Daily Water Usage",
-      "selector": "body",
-      "patterns": [
-        "Average Daily(?: Water)? Usage\\s*[:\\n]?\\s*([\\d,.]+)\\s*(?:gal|gallons)"
-      ],
-      "unit": "gal",
-      "stateClass": "measurement",
-      "icon": "mdi:water-outline"
-    },
-    {
-      "id": "previous_billing_cycle",
-      "name": "Previous Billing Cycle Water Usage",
-      "selector": "body",
-      "patterns": [
-        "Previous Billing Cycle(?: Water)? Usage\\s*[:\\n]?\\s*([\\d,.]+)\\s*(?:gal|gallons)"
-      ],
-      "unit": "gal",
-      "deviceClass": "water",
-      "stateClass": "total",
-      "icon": "mdi:water-check"
     }
   ]
 }
