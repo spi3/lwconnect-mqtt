@@ -27,6 +27,7 @@ const main = async (): Promise<void> => {
     const result = await portal.calibrate();
     log("info", "Calibration artifacts saved", {
       artifactDir: result.artifactDir,
+      sourceUpdatedOn: result.sourceUpdatedOn,
       extractedMetrics: result.metrics,
       missingRuleIds: result.missingRuleIds,
     });
@@ -53,6 +54,7 @@ const main = async (): Promise<void> => {
     await publisher.publishReading(reading);
     log("info", "Water usage published", {
       observedAt: reading.observedAt,
+      sourceUpdatedOn: reading.sourceUpdatedOn,
       metrics: reading.metrics,
     });
   };
@@ -86,7 +88,9 @@ const main = async (): Promise<void> => {
       });
     }
   } finally {
-    await publisher.publishAvailability("offline").catch(() => undefined);
+    if (command === "run") {
+      await publisher.publishAvailability("offline").catch(() => undefined);
+    }
     await publisher.close();
   }
 };

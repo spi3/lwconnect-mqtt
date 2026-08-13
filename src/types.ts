@@ -45,11 +45,13 @@ export type AppConfig = {
 
 export type UsageReading = {
   observedAt: string;
+  sourceUpdatedOn: string;
   metrics: Readonly<Record<string, number>>;
 };
 
 export type CalibrationResult = {
   artifactDir: string;
+  sourceUpdatedOn: string;
   metrics: Readonly<Record<string, number>>;
   missingRuleIds: string[];
 };

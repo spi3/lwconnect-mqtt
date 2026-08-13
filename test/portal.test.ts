@@ -2,7 +2,7 @@ import { createServer, type Server } from "node:http";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { PortalClient } from "../src/portal.js";
+import { extractSourceUpdatedOn, PortalClient } from "../src/portal.js";
 import type { PortalConfig } from "../src/types.js";
 
 let server: Server;
@@ -25,7 +25,7 @@ beforeAll(async () => {
               setTimeout(() => {
                 document.querySelector('#app').innerHTML = '<h1>Dashboard</h1><button id="usage">Water Usage</button>';
                 document.querySelector('#usage').addEventListener('click', () => {
-                  document.querySelector('#app').innerHTML = '<h1>Water Usage</h1><p>Current Billing Cycle Usage</p><strong>1,234 gallons</strong><p>Average Daily Usage</p><strong>42.5 gal</strong>';
+                  document.querySelector('#app').innerHTML = '<h1>Water Usage</h1><p>Current Billing Cycle Usage</p><strong>1,234 gallons</strong><p>Average Daily Usage</p><strong>42.5 gal</strong><p>Last Update: 08/11/2026</p>';
                 });
               }, 50);
             });
@@ -94,6 +94,25 @@ describe("PortalClient", () => {
       current_billing_cycle: 1234,
       average_daily_usage: 42.5,
     });
+    expect(reading.sourceUpdatedOn).toBe("2026-08-11");
     expect(Date.parse(reading.observedAt)).not.toBeNaN();
+  });
+});
+
+describe("extractSourceUpdatedOn", () => {
+  it("normalizes the LW Connect date to ISO format", () => {
+    expect(extractSourceUpdatedOn("Last Update: 8/1/2026")).toBe("2026-08-01");
+  });
+
+  it("rejects invalid dates", () => {
+    expect(() => extractSourceUpdatedOn("Last Update: 02/31/2026")).toThrow(
+      "invalid Last Update date",
+    );
+  });
+
+  it("rejects a page without the source update date", () => {
+    expect(() => extractSourceUpdatedOn("CURRENT USAGE 123 Gallons")).toThrow(
+      "Could not find",
+    );
   });
 });

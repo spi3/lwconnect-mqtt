@@ -83,14 +83,17 @@ unprivileged `pwuser` supplied by the official Playwright image.
 
 Defaults can be changed in `.env`.
 
-| Topic                                                 | Payload                                                 | Retained |
-| ----------------------------------------------------- | ------------------------------------------------------- | -------- |
-| `home/water/lwconnect/state`                          | `{"observedAt":"...","metrics":{"current_usage":1234}}` | yes      |
-| `home/water/lwconnect/availability`                   | `online` or `offline`                                   | yes      |
-| `homeassistant/sensor/lwconnect-mqtt/<metric>/config` | Home Assistant MQTT Discovery config                    | yes      |
+| Topic                                                 | Payload                                                                                | Retained |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------- | -------- |
+| `home/water/lwconnect/state`                          | `{"observedAt":"...","sourceUpdatedOn":"2026-08-11","metrics":{"current_usage":1234}}` | yes      |
+| `home/water/lwconnect/availability`                   | `online` or `offline`                                                                  | yes      |
+| `homeassistant/sensor/lwconnect-mqtt/<metric>/config` | Home Assistant MQTT Discovery config                                                   | yes      |
 
 State and discovery messages use QoS 1. The MQTT connection also has a retained
-`offline` last will, and an orderly shutdown publishes `offline` explicitly.
+`offline` last will, and an orderly continuous-service shutdown publishes
+`offline` explicitly. A successful one-shot publish remains available. The water
+sensor exposes `source_updated_on` and `observed_at` attributes, and MQTT
+Discovery creates a separate diagnostic date sensor for the source update.
 
 ## Troubleshooting
 

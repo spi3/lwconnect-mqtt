@@ -13,12 +13,37 @@ const visiblePasswordSelector = 'input[placeholder="Password"]:visible';
 const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+export const extractSourceUpdatedOn = (text: string): string => {
+  const match = /Last Update:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i.exec(text);
+  const [, rawMonth, rawDay, rawYear] = match ?? [];
+  if (rawMonth === undefined || rawDay === undefined || rawYear === undefined) {
+    throw new Error("Could not find the LW Connect Last Update date");
+  }
+
+  const month = Number(rawMonth);
+  const day = Number(rawDay);
+  const year = Number(rawYear);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error(
+      `LW Connect returned an invalid Last Update date: ${rawMonth}/${rawDay}/${rawYear}`,
+    );
+  }
+
+  return `${rawYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+};
+
 export class PortalClient {
   public constructor(private readonly config: PortalConfig) {}
 
   public async scrapeUsage(): Promise<UsageReading> {
     return this.withUsagePage(async (page) => {
       const extracted = await this.extract(page);
+      const sourceUpdatedOn = await this.extractSourceUpdatedOn(page);
       if (Object.keys(extracted.metrics).length === 0) {
         if (this.config.saveDiagnostics) {
           await this.saveArtifacts(page);
@@ -30,6 +55,7 @@ export class PortalClient {
 
       return {
         observedAt: new Date().toISOString(),
+        sourceUpdatedOn,
         metrics: extracted.metrics,
       };
     });
@@ -38,9 +64,11 @@ export class PortalClient {
   public async calibrate(): Promise<CalibrationResult> {
     return this.withUsagePage(async (page) => {
       const extracted = await this.extract(page);
+      const sourceUpdatedOn = await this.extractSourceUpdatedOn(page);
       await this.saveArtifacts(page);
       return {
         artifactDir: this.config.artifactDir,
+        sourceUpdatedOn,
         ...extracted,
       };
     });
@@ -145,6 +173,10 @@ export class PortalClient {
     }
 
     return extractFromText(textBySelector, this.config.rules.readings);
+  }
+
+  private async extractSourceUpdatedOn(page: Page): Promise<string> {
+    return extractSourceUpdatedOn(await page.locator("body").innerText());
   }
 
   private async saveArtifacts(page: Page): Promise<void> {

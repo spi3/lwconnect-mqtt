@@ -58,6 +58,9 @@ export class MqttPublisher {
         object_id: `${this.config.clientId}_${rule.id}`,
         state_topic: this.stateTopic,
         value_template: `{{ value_json.metrics.${rule.id} }}`,
+        json_attributes_topic: this.stateTopic,
+        json_attributes_template:
+          "{{ {'source_updated_on': value_json.sourceUpdatedOn, 'observed_at': value_json.observedAt} | to_json }}",
         availability_topic: this.availabilityTopic,
         payload_available: "online",
         payload_not_available: "offline",
@@ -82,6 +85,30 @@ export class MqttPublisher {
       };
       await this.publish(topic, JSON.stringify(payload), true);
     }
+
+    await this.publish(
+      `${this.config.discoveryPrefix}/sensor/${this.config.clientId}/source_updated_on/config`,
+      JSON.stringify({
+        name: "Source Data Updated On",
+        unique_id: `${this.config.clientId}_source_updated_on`,
+        object_id: `${this.config.clientId}_source_updated_on`,
+        state_topic: this.stateTopic,
+        value_template: "{{ value_json.sourceUpdatedOn }}",
+        device_class: "date",
+        entity_category: "diagnostic",
+        availability_topic: this.availabilityTopic,
+        payload_available: "online",
+        payload_not_available: "offline",
+        device: {
+          identifiers: [this.config.clientId],
+        },
+        origin: {
+          name: "lwconnect-mqtt",
+          sw_version: "0.1.0",
+        },
+      }),
+      true,
+    );
   }
 
   public async publishReading(reading: UsageReading): Promise<void> {

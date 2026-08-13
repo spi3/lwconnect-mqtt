@@ -43,12 +43,14 @@ describe("MqttPublisher", () => {
     await publisher.publishDiscovery();
     await publisher.publishReading({
       observedAt: "2026-08-13T00:00:00.000Z",
+      sourceUpdatedOn: "2026-08-11",
       metrics: { current_billing_cycle: 123 },
     });
     await publisher.close();
 
     expect(publications.map(({ topic }) => topic)).toEqual([
       "homeassistant/sensor/lwconnect-mqtt/current_billing_cycle/config",
+      "homeassistant/sensor/lwconnect-mqtt/source_updated_on/config",
       "home/water/lwconnect/state",
       "home/water/lwconnect/availability",
     ]);
@@ -56,8 +58,21 @@ describe("MqttPublisher", () => {
       unique_id: "lwconnect-mqtt_current_billing_cycle",
       state_topic: "home/water/lwconnect/state",
       value_template: "{{ value_json.metrics.current_billing_cycle }}",
+      json_attributes_topic: "home/water/lwconnect/state",
       device_class: "water",
       state_class: "total_increasing",
+    });
+    expect(JSON.parse(publications[1]?.message ?? "{}")).toMatchObject({
+      unique_id: "lwconnect-mqtt_source_updated_on",
+      state_topic: "home/water/lwconnect/state",
+      value_template: "{{ value_json.sourceUpdatedOn }}",
+      device_class: "date",
+      entity_category: "diagnostic",
+    });
+    expect(JSON.parse(publications[2]?.message ?? "{}")).toEqual({
+      observedAt: "2026-08-13T00:00:00.000Z",
+      sourceUpdatedOn: "2026-08-11",
+      metrics: { current_billing_cycle: 123 },
     });
   });
 });
