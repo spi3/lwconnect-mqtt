@@ -18,7 +18,7 @@ const environmentSchema = z.object({
   LWCONNECT_LOGIN_URL: z.url().default("https://www.lwconnect.org/login.html"),
   LWCONNECT_HEADLESS: booleanValue.default(true),
   LWCONNECT_TIMEOUT_MS: z.coerce.number().int().min(5_000).default(30_000),
-  LWCONNECT_POLL_INTERVAL_MINUTES: z.coerce.number().min(5).default(60),
+  LWCONNECT_POLL_INTERVAL_MINUTES: z.coerce.number().min(5).default(720),
   LWCONNECT_RULES_PATH: z.string().default("./config/readings.json"),
   LWCONNECT_ARTIFACT_DIR: z.string().default("./artifacts"),
   LWCONNECT_SAVE_DIAGNOSTICS: booleanValue.default(false),
