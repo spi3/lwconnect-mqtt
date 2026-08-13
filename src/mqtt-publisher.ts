@@ -1,6 +1,7 @@
 import { connectAsync, type IClientOptions } from "mqtt";
 
 import type { MqttConfig, ReadingRule, UsageReading } from "./types.js";
+import { appVersion } from "./version.js";
 
 export type AsyncMqttClient = {
   publishAsync(
@@ -80,7 +81,7 @@ export class MqttPublisher {
         },
         origin: {
           name: "lwconnect-mqtt",
-          sw_version: "0.1.0",
+          sw_version: appVersion,
         },
       };
       await this.publish(topic, JSON.stringify(payload), true);
@@ -104,7 +105,7 @@ export class MqttPublisher {
         },
         origin: {
           name: "lwconnect-mqtt",
-          sw_version: "0.1.0",
+          sw_version: appVersion,
         },
       }),
       true,

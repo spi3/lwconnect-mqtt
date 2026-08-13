@@ -17,8 +17,8 @@ makes those changes inspectable without changing application code.
 - Calibration artifacts contain account information. They are written with
   owner-only permissions where supported; do not share them without redacting
   them.
-- The poll interval defaults to 60 minutes to avoid placing unnecessary load on
-  LW Connect. Do not lower it below five minutes.
+- The poll interval defaults to 12 hours to avoid placing unnecessary load on LW
+  Connect. Do not lower it below five minutes.
 - Confirm that automated access is acceptable under the portal's terms and your
   account agreement before long-term deployment.
 
@@ -78,6 +78,23 @@ docker compose logs -f lwconnect-mqtt
 
 The image versions Playwright and its browser together. It runs as the
 unprivileged `pwuser` supplied by the official Playwright image.
+
+Tagged releases are published for `linux/amd64` and `linux/arm64` at:
+
+```text
+ghcr.io/spi3/lwconnect-mqtt
+```
+
+For example:
+
+```sh
+docker pull ghcr.io/spi3/lwconnect-mqtt:0.1.0
+```
+
+Pushing a semantic version tag such as `v0.1.0` publishes the full version,
+major/minor, major, and appropriate `latest` image tags. The tag must match the
+version in `package.json`; the release workflow runs all checks before
+publishing and attaches provenance and an SBOM.
 
 ## MQTT contract
 
