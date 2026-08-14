@@ -70,7 +70,7 @@ const validateDate = (year: number, month: number, day: number): void => {
 
 export const buildDailyUsage = (
   labels: readonly string[],
-  values: readonly number[],
+  values: readonly (number | null)[],
   observedAt: Date,
 ): DailyUsage[] => {
   if (labels.length === 0 || labels.length !== values.length) {
@@ -122,16 +122,11 @@ export const buildDailyUsage = (
     nextMonth = label.month;
   }
 
-  return parsedLabels.map(({ month, day }, index) => {
+  const usage = parsedLabels.flatMap(({ month, day }, index) => {
     const value = values[index];
     const resolvedYear = years[index];
-    if (
-      value === undefined ||
-      resolvedYear === undefined ||
-      !Number.isFinite(value) ||
-      value < 0
-    ) {
-      throw new Error("LW Connect returned an invalid daily usage value");
+    if (value === undefined || resolvedYear === undefined) {
+      throw new Error("LW Connect returned incomplete daily usage graph data");
     }
     validateDate(resolvedYear, month, day);
     if (index > 0) {
@@ -148,6 +143,13 @@ export const buildDailyUsage = (
         throw new Error("LW Connect daily usage dates are not continuous");
       }
     }
-    return { date: dateKey(resolvedYear, month, day), gallons: value };
+    if (value === null || !Number.isFinite(value) || value < 0) {
+      return [];
+    }
+    return [{ date: dateKey(resolvedYear, month, day), gallons: value }];
   });
+  if (usage.length === 0) {
+    throw new Error("LW Connect returned no available daily usage values");
+  }
+  return usage;
 };

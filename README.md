@@ -69,7 +69,9 @@ npm run once
 This retains the full dated daily window at `home/water/lwconnect/daily`. Home
 Assistant discovery also creates
 `sensor.loudoun_water_lw_connect_latest_daily_water_usage`; its `usage_date`
-attribute identifies the day represented by the state.
+attribute identifies the day represented by the state. Dates whose chart value
+is still marked unavailable by LW Connect are omitted until a later poll; a
+reported value of zero remains a valid usage reading.
 
 ## Home Assistant daily statistics
 
@@ -147,10 +149,10 @@ ghcr.io/spi3/lwconnect-mqtt
 For example:
 
 ```sh
-docker pull ghcr.io/spi3/lwconnect-mqtt:0.3.0
+docker pull ghcr.io/spi3/lwconnect-mqtt:0.3.1
 ```
 
-Pushing a semantic version tag such as `v0.3.0` publishes the full version,
+Pushing a semantic version tag such as `v0.3.1` publishes the full version,
 major/minor, major, and appropriate `latest` image tags. The tag must match the
 version in `package.json`; the release workflow runs all checks before
 publishing and attaches provenance and an SBOM.

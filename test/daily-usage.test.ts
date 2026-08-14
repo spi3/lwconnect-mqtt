@@ -53,4 +53,30 @@ describe("buildDailyUsage", () => {
       ),
     ).toThrow("not continuous");
   });
+
+  it("omits unavailable sentinels without dropping a real zero", () => {
+    expect(
+      buildDailyUsage(
+        ["Aug 11", "Aug 12", "Aug 13"],
+        [0, 126.6, -1],
+        new Date("2026-08-14T12:00:00Z"),
+      ),
+    ).toEqual([
+      { date: "2026-08-11", gallons: 0 },
+      { date: "2026-08-12", gallons: 126.6 },
+    ]);
+  });
+
+  it("omits an unavailable value in the middle of otherwise valid history", () => {
+    expect(
+      buildDailyUsage(
+        ["Aug 10", "Aug 11", "Aug 12"],
+        [100, null, 125],
+        new Date("2026-08-14T12:00:00Z"),
+      ),
+    ).toEqual([
+      { date: "2026-08-10", gallons: 100 },
+      { date: "2026-08-12", gallons: 125 },
+    ]);
+  });
 });

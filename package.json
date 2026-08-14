@@ -1,6 +1,6 @@
 {
   "name": "lwconnect-mqtt",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Publish Loudoun Water LW Connect usage to MQTT with Playwright",
   "type": "module",

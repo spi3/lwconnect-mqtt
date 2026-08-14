@@ -281,7 +281,11 @@ export class PortalClient {
       return {
         labels: (instance?.data?.labels ?? []).map(String),
         values: (instance?.data?.datasets?.[0]?.data ?? []).map((value) =>
-          typeof value === "number" ? value : Number(value),
+          typeof value === "number"
+            ? value
+            : typeof value === "string" && value.trim() !== ""
+              ? Number(value)
+              : null,
         ),
       };
     });
