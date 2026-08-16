@@ -139,11 +139,15 @@ export class PortalClient {
   }
 
   private async openUsagePage(page: Page): Promise<void> {
+    if (await this.isUsageDashboardVisible(page)) {
+      return;
+    }
+
     const configuredSelector = this.config.rules.usageNavigationSelector;
     if (configuredSelector !== undefined) {
       const navigation = page.locator(configuredSelector).first();
       await navigation.waitFor({ state: "visible" });
-      await navigation.click();
+      await this.clickUsageNavigation(page, navigation);
       await page.waitForTimeout(1_000);
       return;
     }
@@ -173,7 +177,10 @@ export class PortalClient {
       }
 
       if (await navigation.isVisible()) {
-        await navigation.click();
+        if (await this.isUsageDashboardVisible(page)) {
+          return;
+        }
+        await this.clickUsageNavigation(page, navigation);
         await page.waitForTimeout(1_000);
         return;
       }
@@ -185,6 +192,38 @@ export class PortalClient {
     throw new Error(
       `Could not find LW Connect usage navigation. Tried: ${this.config.rules.usageNavigationLabels.join(", ")}`,
     );
+  }
+
+  private usageDashboard(page: Page) {
+    return page
+      .locator('[role="dialog"]:visible')
+      .filter({ hasText: /Tier\s+1\s*-\s*\$/i })
+      .first();
+  }
+
+  private async isUsageDashboardVisible(page: Page): Promise<boolean> {
+    return this.usageDashboard(page)
+      .isVisible()
+      .catch(() => false);
+  }
+
+  private async clickUsageNavigation(
+    page: Page,
+    navigation: ReturnType<Page["locator"]>,
+  ): Promise<void> {
+    try {
+      await navigation.click({
+        timeout: Math.min(this.config.timeoutMs, 5_000),
+      });
+    } catch (error: unknown) {
+      const dashboardAppeared = await this.usageDashboard(page)
+        .waitFor({ state: "visible", timeout: 2_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!dashboardAppeared) {
+        throw error;
+      }
+    }
   }
 
   private async extract(page: Page) {
@@ -208,10 +247,7 @@ export class PortalClient {
   }
 
   private async extractUsageCost(page: Page) {
-    const dashboard = page
-      .locator('[role="dialog"]:visible')
-      .filter({ hasText: /Tier\s+1\s*-\s*\$/i })
-      .first();
+    const dashboard = this.usageDashboard(page);
     await dashboard.waitFor({ state: "visible" });
     const currentUsageText =
       (await dashboard.locator(".gauge #Value").textContent()) ?? "";
@@ -227,10 +263,7 @@ export class PortalClient {
   }
 
   private async extractDailyUsage(page: Page) {
-    const dashboard = page
-      .locator('[role="dialog"]:visible')
-      .filter({ hasText: /Tier\s+1\s*-\s*\$/i })
-      .first();
+    const dashboard = this.usageDashboard(page);
     await dashboard
       .locator("button:visible")
       .filter({ hasText: /^\s*Close\s*$/i })

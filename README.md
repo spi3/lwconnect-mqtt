@@ -149,10 +149,10 @@ ghcr.io/spi3/lwconnect-mqtt
 For example:
 
 ```sh
-docker pull ghcr.io/spi3/lwconnect-mqtt:0.3.1
+docker pull ghcr.io/spi3/lwconnect-mqtt:0.3.2
 ```
 
-Pushing a semantic version tag such as `v0.3.1` publishes the full version,
+Pushing a semantic version tag such as `v0.3.2` publishes the full version,
 major/minor, major, and appropriate `latest` image tags. The tag must match the
 version in `package.json`; the release workflow runs all checks before
 publishing and attaches provenance and an SBOM.
@@ -186,6 +186,9 @@ all of those past days independently queryable in Home Assistant statistics.
   update the regular expressions. JSON requires backslashes to be doubled.
 - Login timeout: verify the credentials manually and inspect whether LW Connect
   introduced a challenge, consent prompt, or changed the login form.
+- A transient LW Connect modal may cover `VIEW USAGE`; the scraper recognizes
+  the already-open usage dashboard and continues without forcing a click through
+  the modal underlay.
 - For interactive debugging, set `LWCONNECT_HEADLESS=false` on a machine with a
   graphical session and run `npm run calibrate`.
 
